@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Star, Video, Coins, Dice6, Gem, Rocket, Crown } from "lucide-react";
 import GameCard from "./game-card";
+import GameLauncher from "./game-launcher";
+import LiveChat from "./live-chat";
+import LiveBettingFeed from "./live-betting-feed";
 import type { Game } from "@/types/game";
 
 interface GamesGridProps {
@@ -9,6 +13,9 @@ interface GamesGridProps {
 }
 
 export default function GamesGrid({ activeCategory }: GamesGridProps) {
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [isGameOpen, setIsGameOpen] = useState(false);
+
   const { data: games, isLoading } = useQuery<Game[]>({
     queryKey: ["/api/games"],
   });
@@ -22,8 +29,13 @@ export default function GamesGrid({ activeCategory }: GamesGridProps) {
   const liveGames = games?.filter(game => game.category === "live") || [];
 
   const handleGameClick = (game: Game) => {
-    console.log("Opening game in demo mode:", game.name);
-    // TODO: Implement game launch functionality
+    setSelectedGame(game);
+    setIsGameOpen(true);
+  };
+
+  const closeGame = () => {
+    setIsGameOpen(false);
+    setSelectedGame(null);
   };
 
   if (isLoading) {
@@ -37,10 +49,11 @@ export default function GamesGrid({ activeCategory }: GamesGridProps) {
   }
 
   return (
-    <main className="py-12 bg-stake-dark">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          {/* Popular Games Section */}
+    <>
+      <main className="py-12 bg-stake-dark">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            {/* Popular Games Section */}
           <div className="mb-12">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-3xl font-bold text-white">Popular Games</h2>
@@ -143,5 +156,19 @@ export default function GamesGrid({ activeCategory }: GamesGridProps) {
           </div>
         </div>
       </main>
+      
+      {/* Live Features Sidebar */}
+      <div className="fixed right-4 top-20 space-y-4 z-40 hidden xl:block">
+        <LiveChat />
+        <LiveBettingFeed />
+      </div>
+      
+      {/* Game Launcher Modal */}
+      <GameLauncher 
+        game={selectedGame}
+        isOpen={isGameOpen}
+        onClose={closeGame}
+      />
+    </>
   );
 }

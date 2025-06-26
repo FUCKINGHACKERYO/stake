@@ -307,12 +307,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // WebSocket for live features
-  const wss = new WebSocketServer({ server: httpServer });
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
   wss.on('connection', (ws) => {
+    console.log('WebSocket client connected');
+    
     // Send live updates for crash game, live bets, etc.
     const interval = setInterval(() => {
-      if (ws.readyState === ws.OPEN) {
+      if (ws.readyState === 1) { // WebSocket.OPEN
         ws.send(JSON.stringify({
           type: 'crash_update',
           multiplier: (Math.random() * 10 + 1).toFixed(2),
@@ -322,6 +324,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }, 1000);
     
     ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+      clearInterval(interval);
+    });
+    
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
       clearInterval(interval);
     });
   });
