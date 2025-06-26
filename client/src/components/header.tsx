@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Coins, User, Menu, Plus } from "lucide-react";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [location] = useLocation();
 
-  const { data: balance } = useQuery({
+  const { data: balance } = useQuery<{ balance: string; currency?: string }>({
     queryKey: ["/api/user/balance"],
   });
 
@@ -25,18 +27,30 @@ export default function Header() {
             
             {/* Navigation Links */}
             <nav className="hidden md:flex space-x-6">
-              <a href="#" className="text-stake-accent font-medium hover:text-green-400 transition-colors">
-                Casino
-              </a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                Sports
-              </a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                Originals
-              </a>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                Promotions
-              </a>
+              <Link href="/">
+                <a className={`font-medium hover:text-green-400 transition-colors ${
+                  location === "/" ? "text-stake-accent" : "text-gray-300 hover:text-white"
+                }`}>
+                  Casino
+                </a>
+              </Link>
+              <Link href="/sports">
+                <a className={`font-medium hover:text-green-400 transition-colors ${
+                  location === "/sports" ? "text-stake-accent" : "text-gray-300 hover:text-white"
+                }`}>
+                  Sports
+                </a>
+              </Link>
+              <Link href="/">
+                <a className="text-gray-300 hover:text-white transition-colors">
+                  Originals
+                </a>
+              </Link>
+              <Link href="/">
+                <a className="text-gray-300 hover:text-white transition-colors">
+                  Promotions
+                </a>
+              </Link>
             </nav>
           </div>
           

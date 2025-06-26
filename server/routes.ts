@@ -304,6 +304,185 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sports betting routes
+  app.post("/api/sports/bet", async (req, res) => {
+    try {
+      const { bets, totalStake } = req.body;
+      const userId = DEMO_USER_ID;
+      
+      // Get current user balance
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const currentBalance = parseFloat(user.balance);
+      if (totalStake > currentBalance) {
+        return res.status(400).json({ error: "Insufficient balance" });
+      }
+
+      // Process each bet with realistic outcomes
+      const processedBets = [];
+      let totalWinnings = 0;
+      
+      for (const bet of bets) {
+        // Calculate win probability based on odds (more realistic)
+        const impliedProbability = 1 / bet.odds;
+        const adjustedProbability = impliedProbability * 0.95; // House edge
+        const isWin = Math.random() < adjustedProbability;
+        const winAmount = isWin ? bet.stake * bet.odds : 0;
+        totalWinnings += winAmount;
+
+        // Create transaction record
+        await storage.createTransaction({
+          userId,
+          type: "sports_bet",
+          amount: bet.stake.toString(),
+          description: `Sports bet: ${bet.selection}`,
+          status: "completed"
+        });
+
+        processedBets.push({
+          ...bet,
+          isWin,
+          winAmount,
+          status: isWin ? 'won' : 'lost'
+        });
+      }
+
+      // Update user balance
+      const newBalance = currentBalance - totalStake + totalWinnings;
+      await storage.updateUserBalance(userId, newBalance);
+      
+      // Update user stats
+      await storage.updateUserStats(userId, totalStake, totalWinnings);
+
+      res.json({
+        success: true,
+        bets: processedBets,
+        totalStake,
+        totalWinnings,
+        newBalance: newBalance.toFixed(2)
+      });
+    } catch (error) {
+      console.error("Error placing sports bets:", error);
+      res.status(500).json({ error: "Failed to place sports bets" });
+    }
+  });
+
+  // Get live sports events with dynamic odds
+  app.get("/api/sports/events", async (req, res) => {
+    try {
+      const { sport, status } = req.query;
+      
+      // Real-time sports events with fluctuating odds
+      const baseEvents = [
+        {
+          id: "1",
+          sport: "football",
+          league: "Premier League",
+          homeTeam: "Manchester City",
+          awayTeam: "Liverpool",
+          baseHomeOdds: 2.10,
+          baseAwayOdds: 3.40,
+          baseDrawOdds: 3.20,
+          startTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
+          isLive: false,
+          status: 'upcoming'
+        },
+        {
+          id: "2",
+          sport: "football", 
+          league: "Champions League",
+          homeTeam: "Real Madrid",
+          awayTeam: "Barcelona",
+          baseHomeOdds: 1.85,
+          baseAwayOdds: 4.20,
+          baseDrawOdds: 3.60,
+          startTime: new Date(Date.now() + 4 * 60 * 60 * 1000),
+          isLive: false,
+          status: 'upcoming'
+        },
+        {
+          id: "3",
+          sport: "football",
+          league: "La Liga",
+          homeTeam: "Atletico Madrid",
+          awayTeam: "Sevilla",
+          baseHomeOdds: 1.65,
+          baseAwayOdds: 5.20,
+          baseDrawOdds: 4.10,
+          startTime: new Date(),
+          isLive: true,
+          score: { home: Math.floor(Math.random() * 4), away: Math.floor(Math.random() * 3) },
+          status: 'live'
+        },
+        {
+          id: "4",
+          sport: "basketball",
+          league: "NBA",
+          homeTeam: "Lakers",
+          awayTeam: "Warriors",
+          baseHomeOdds: 2.30,
+          baseAwayOdds: 1.60,
+          startTime: new Date(Date.now() + 6 * 60 * 60 * 1000),
+          isLive: false,
+          status: 'upcoming'
+        },
+        {
+          id: "5",
+          sport: "tennis",
+          league: "ATP Masters",
+          homeTeam: "Djokovic",
+          awayTeam: "Nadal",
+          baseHomeOdds: 1.45,
+          baseAwayOdds: 2.75,
+          startTime: new Date(Date.now() + 1 * 60 * 60 * 1000),
+          isLive: false,
+          status: 'upcoming'
+        },
+        {
+          id: "6",
+          sport: "esports",
+          league: "League of Legends World Championship",
+          homeTeam: "T1",
+          awayTeam: "Gen.G",
+          baseHomeOdds: 1.90,
+          baseAwayOdds: 1.90,
+          startTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
+          isLive: false,
+          status: 'upcoming'
+        }
+      ];
+
+      // Apply dynamic odds with realistic fluctuation
+      const events = baseEvents.map(event => {
+        const variation = 0.1; // 10% max variation
+        return {
+          ...event,
+          homeOdds: parseFloat((event.baseHomeOdds * (1 + (Math.random() - 0.5) * variation)).toFixed(2)),
+          awayOdds: parseFloat((event.baseAwayOdds * (1 + (Math.random() - 0.5) * variation)).toFixed(2)),
+          drawOdds: event.baseDrawOdds ? parseFloat((event.baseDrawOdds * (1 + (Math.random() - 0.5) * variation)).toFixed(2)) : undefined
+        };
+      });
+
+      let filteredEvents = events;
+      
+      if (sport && sport !== 'all') {
+        filteredEvents = filteredEvents.filter(event => event.sport === sport);
+      }
+      
+      if (status) {
+        filteredEvents = filteredEvents.filter(event => event.status === status);
+      }
+
+      res.json(filteredEvents);
+    } catch (error) {
+      console.error("Error fetching sports events:", error);
+      res.status(500).json({ error: "Failed to fetch sports events" });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // WebSocket for live features

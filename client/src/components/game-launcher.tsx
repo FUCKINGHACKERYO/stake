@@ -2,10 +2,13 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import PlinkoGame from "@/components/games/plinko-game";
-import CrashGame from "@/components/games/crash-game";
+import EnhancedPlinkoGame from "@/components/games/enhanced-plinko";
+import EnhancedCrashGame from "@/components/games/enhanced-crash";
+import SlotGame from "@/components/games/slot-game";
 import DiceGame from "@/components/games/dice-game";
 import MinesGame from "@/components/games/mines-game";
+import PlinkoGame from "@/components/games/plinko-game";
+import CrashGame from "@/components/games/crash-game";
 import type { Game } from "@/types/game";
 
 interface GameLauncherProps {
@@ -22,15 +25,17 @@ export default function GameLauncher({ game, isOpen, onClose }: GameLauncherProp
   const renderGameComponent = () => {
     switch (game.subcategory) {
       case "plinko":
-        return <PlinkoGame gameId={game.id} />;
+        return <EnhancedPlinkoGame gameId={game.id} />;
       case "crash":
-        return <CrashGame gameId={game.id} />;
+        return <EnhancedCrashGame gameId={game.id} />;
       case "dice":
         return <DiceGame gameId={game.id} />;
       case "mines":
         return <MinesGame gameId={game.id} />;
       case "limbo":
         return <LimboGame gameId={game.id} />;
+      case "video_slots":
+        return <SlotGame gameId={game.id} gameName={game.name} />;
       default:
         return <DefaultGame game={game} />;
     }

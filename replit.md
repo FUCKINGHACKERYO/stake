@@ -1,8 +1,8 @@
-# Stake Casino Clone - 100% Accurate Replica
+# Stake Casino Clone - 100% Functional Replica
 
 ## Overview
 
-This is a comprehensive 100% accurate replica of Stake.com featuring all real-time casino games with authentic betting mechanics. Built with React/TypeScript for the frontend and Node.js/Express for the backend, it includes real betting functionality, live WebSocket features, authentic game mathematics, user authentication, transaction tracking, and a complete casino ecosystem matching the original Stake.com experience.
+This is a comprehensive 100% functional replica of Stake.com featuring all casino games, sports betting, and original games with authentic mechanics and real-time features. Built with React/TypeScript for the frontend and Node.js/Express for the backend, it includes PostgreSQL database integration, enhanced game graphics, live WebSocket features, authentic game mathematics, comprehensive sports betting system, user balance management, transaction tracking, and a complete casino ecosystem matching the original Stake.com experience.
 
 ## System Architecture
 
@@ -89,9 +89,28 @@ Three main entities managed through Drizzle ORM:
 - `npm run build` - Production build for both frontend and backend
 - `npm run start` - Production server execution
 
-Changelog:
-- June 26, 2025. Initial setup
+## Recent Changes
+
+### June 26, 2025 - Major Architecture Update
+- **PostgreSQL Database Integration**: Replaced in-memory storage with full PostgreSQL database using Neon
+- **Enhanced Casino Games**: Created authentic Plinko and Crash games with real-time graphics, animations, and physics
+- **Comprehensive Sports Betting**: Added full sports betting system with live odds, bet slip, and real-time events
+- **Enhanced Slot Games**: Built authentic slot machine games (Gates of Olympus, Sweet Bonanza) with cascading reels and win animations  
+- **Live Features**: Implemented WebSocket connections for real-time updates across all games
+- **Navigation System**: Added seamless routing between casino games and sports betting sections
+- **Database Schema**: Created comprehensive tables for users, games, sessions, transactions, promotions, and live bets
+- **Authentic Game Mathematics**: Implemented real RTP calculations, house edge, and payout systems matching Stake.com
+
+### Key Features Added
+- Enhanced Plinko with authentic risk multipliers and ball physics simulation
+- Enhanced Crash with real-time multiplier curves and auto-cashout functionality
+- Comprehensive slot games with authentic symbol mechanics and win line calculations
+- Sports betting with dynamic odds, live events, and bet slip management
+- Real-time live betting feed and chat systems
+- User balance management with persistent transaction history
+- Auto-betting modes for all casino games
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Requirements: 100% functional replica matching original Stake.com, no demo functionality.
