@@ -5,6 +5,8 @@ import {
   type InsertTransaction, type Promotion, type InsertPromotion,
   type LiveBet, type InsertLiveBet
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -39,6 +41,362 @@ export interface IStorage {
   updateLiveBet(id: number, updates: Partial<LiveBet>): Promise<LiveBet | undefined>;
 }
 
+export class DatabaseStorage implements IStorage {
+  constructor() {
+    // Initialize with sample data if needed
+    this.initializeDatabase();
+  }
+
+  private async initializeDatabase() {
+    // Check if games exist, if not, seed the database
+    const existingGames = await db.select().from(games).limit(1);
+    if (existingGames.length === 0) {
+      await this.seedDatabase();
+    }
+  }
+
+  private async seedDatabase() {
+    // Create sample games
+    const sampleGames: InsertGame[] = [
+      // Stake Originals
+      {
+        name: "Plinko",
+        provider: "Stake Originals",
+        category: "originals",
+        subcategory: "plinko",
+        isHot: true,
+        isNew: false,
+        description: "Drop the ball and watch it bounce to your fortune!",
+        minBet: "0.01",
+        maxBet: "1000.00",
+        rtp: "99.00",
+        volatility: "medium",
+        isLive: false,
+        gameConfig: { rows: 16, risk: "low" }
+      },
+      {
+        name: "Crash",
+        provider: "Stake Originals",
+        category: "originals",
+        subcategory: "crash",
+        isHot: true,
+        isNew: false,
+        description: "Watch the multiplier soar, but cash out before it crashes!",
+        minBet: "0.01",
+        maxBet: "1000.00",
+        rtp: "99.00",
+        volatility: "high",
+        isLive: true,
+        gameConfig: { maxMultiplier: 1000000 }
+      },
+      {
+        name: "Dice",
+        provider: "Stake Originals",
+        category: "originals",
+        subcategory: "dice",
+        isHot: false,
+        isNew: false,
+        description: "Roll the dice and predict the outcome. Simple yet thrilling!",
+        minBet: "0.01",
+        maxBet: "1000.00",
+        rtp: "99.00",
+        volatility: "medium",
+        isLive: false,
+        gameConfig: { sides: 6, multiplier: 5.94 }
+      },
+      {
+        name: "Mines",
+        provider: "Stake Originals",
+        category: "originals",
+        subcategory: "mines",
+        isHot: false,
+        isNew: true,
+        description: "Navigate the minefield and claim your treasure!",
+        minBet: "0.01",
+        maxBet: "1000.00",
+        rtp: "99.00",
+        volatility: "high",
+        isLive: false,
+        gameConfig: { gridSize: 25, mines: 3 }
+      },
+      {
+        name: "Limbo",
+        provider: "Stake Originals",
+        category: "originals",
+        subcategory: "limbo",
+        isHot: false,
+        isNew: false,
+        description: "How high can you go? Set your target and see if you can reach it!",
+        minBet: "0.01",
+        maxBet: "1000.00",
+        rtp: "99.00",
+        volatility: "high",
+        isLive: false,
+        gameConfig: { maxMultiplier: 1000000 }
+      },
+      // Slots
+      {
+        name: "Gates of Olympus",
+        provider: "Pragmatic Play",
+        category: "slots",
+        subcategory: "video_slots",
+        isHot: true,
+        isNew: false,
+        description: "Legendary slot with cascading wins and multipliers",
+        minBet: "0.20",
+        maxBet: "125.00",
+        rtp: "96.50",
+        volatility: "high",
+        isLive: false,
+        gameConfig: { reels: 6, rows: 5, paylines: "all_ways" }
+      },
+      {
+        name: "Sweet Bonanza",
+        provider: "Pragmatic Play",
+        category: "slots",
+        subcategory: "video_slots",
+        isHot: false,
+        isNew: false,
+        description: "Sweet treats and big wins with tumbling reels",
+        minBet: "0.20",
+        maxBet: "125.00",
+        rtp: "96.48",
+        volatility: "high",
+        isLive: false,
+        gameConfig: { reels: 6, rows: 5, paylines: "all_ways" }
+      },
+      // Live Casino
+      {
+        name: "Crazy Time",
+        provider: "Evolution Gaming",
+        category: "live",
+        subcategory: "game_shows",
+        isHot: true,
+        isNew: false,
+        description: "The ultimate game show experience with 4 exciting bonus games",
+        minBet: "0.10",
+        maxBet: "500.00",
+        rtp: "96.08",
+        volatility: "high",
+        isLive: true,
+        gameConfig: { wheel_segments: 54, bonus_games: 4 }
+      },
+      {
+        name: "Lightning Roulette",
+        provider: "Evolution Gaming",
+        category: "live",
+        subcategory: "roulette",
+        isHot: false,
+        isNew: false,
+        description: "European roulette with electrifying RNG multipliers",
+        minBet: "0.20",
+        maxBet: "25000.00",
+        rtp: "97.30",
+        volatility: "medium",
+        isLive: true,
+        gameConfig: { type: "european", lightning_numbers: 5 }
+      }
+    ];
+
+    await db.insert(games).values(sampleGames);
+
+    // Create demo user
+    await db.insert(users).values({
+      username: "demo_player",
+      email: "demo@stake.com",
+      password: "demo123",
+      balance: "1000.00"
+    });
+
+    // Create sample promotions
+    const samplePromotions: InsertPromotion[] = [
+      {
+        title: "Welcome Bonus",
+        description: "Get 200% bonus on your first deposit up to $2000",
+        type: "welcome_bonus",
+        value: "2000.00",
+        minDeposit: "20.00",
+        wagering: 40,
+        isActive: true,
+        validFrom: new Date(),
+        validTo: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      },
+      {
+        title: "Daily Cashback",
+        description: "Get 10% cashback on your daily losses",
+        type: "cashback",
+        value: "1000.00",
+        wagering: 1,
+        isActive: true,
+        validFrom: new Date(),
+        validTo: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      }
+    ];
+
+    await db.insert(promotions).values(samplePromotions);
+  }
+
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values({
+        ...insertUser,
+        balance: "1000.00",
+        currency: "USD",
+        isVerified: false,
+        isVip: false,
+        level: 1,
+        experience: 0,
+        totalWagered: "0.00",
+        totalWon: "0.00"
+      })
+      .returning();
+    return user;
+  }
+
+  async updateUserBalance(id: number, newBalance: number): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ balance: newBalance.toFixed(2) })
+      .where(eq(users.id, id))
+      .returning();
+    return user || undefined;
+  }
+
+  async updateUserStats(id: number, wagered: number, won: number): Promise<User | undefined> {
+    const user = await this.getUser(id);
+    if (!user) return undefined;
+    
+    const currentWagered = parseFloat(user.totalWagered || "0");
+    const currentWon = parseFloat(user.totalWon || "0");
+    const currentExp = user.experience || 0;
+    
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        totalWagered: (currentWagered + wagered).toFixed(2),
+        totalWon: (currentWon + won).toFixed(2),
+        experience: currentExp + Math.floor(wagered)
+      })
+      .where(eq(users.id, id))
+      .returning();
+    
+    return updatedUser || undefined;
+  }
+
+  // Game methods
+  async getAllGames(): Promise<Game[]> {
+    return await db.select().from(games).where(eq(games.isActive, true));
+  }
+
+  async getGamesByCategory(category: string): Promise<Game[]> {
+    if (category === "all") {
+      return await this.getAllGames();
+    }
+    return await db.select().from(games)
+      .where(eq(games.category, category));
+  }
+
+  async getGame(id: number): Promise<Game | undefined> {
+    const [game] = await db.select().from(games).where(eq(games.id, id));
+    return game || undefined;
+  }
+
+  async createGame(insertGame: InsertGame): Promise<Game> {
+    const [game] = await db
+      .insert(games)
+      .values(insertGame)
+      .returning();
+    return game;
+  }
+
+  // Game session methods
+  async createGameSession(insertSession: InsertGameSession): Promise<GameSession> {
+    const [session] = await db
+      .insert(gameSessions)
+      .values(insertSession)
+      .returning();
+    return session;
+  }
+
+  async getUserGameSessions(userId: number): Promise<GameSession[]> {
+    return await db.select().from(gameSessions)
+      .where(eq(gameSessions.userId, userId))
+      .orderBy(desc(gameSessions.createdAt));
+  }
+
+  async getRecentSessions(limit: number = 50): Promise<GameSession[]> {
+    return await db.select().from(gameSessions)
+      .orderBy(desc(gameSessions.createdAt))
+      .limit(limit);
+  }
+
+  // Transaction methods
+  async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
+    const [transaction] = await db
+      .insert(transactions)
+      .values(insertTransaction)
+      .returning();
+    return transaction;
+  }
+
+  async getUserTransactions(userId: number): Promise<Transaction[]> {
+    return await db.select().from(transactions)
+      .where(eq(transactions.userId, userId))
+      .orderBy(desc(transactions.createdAt));
+  }
+
+  // Promotion methods
+  async getActivePromotions(): Promise<Promotion[]> {
+    const now = new Date();
+    return await db.select().from(promotions)
+      .where(eq(promotions.isActive, true));
+  }
+
+  async createPromotion(insertPromotion: InsertPromotion): Promise<Promotion> {
+    const [promotion] = await db
+      .insert(promotions)
+      .values(insertPromotion)
+      .returning();
+    return promotion;
+  }
+
+  // Live betting methods
+  async createLiveBet(insertBet: InsertLiveBet): Promise<LiveBet> {
+    const [bet] = await db
+      .insert(liveBets)
+      .values(insertBet)
+      .returning();
+    return bet;
+  }
+
+  async getActiveLiveBets(gameId: number): Promise<LiveBet[]> {
+    return await db.select().from(liveBets)
+      .where(eq(liveBets.gameId, gameId));
+  }
+
+  async updateLiveBet(id: number, updates: Partial<LiveBet>): Promise<LiveBet | undefined> {
+    const [bet] = await db
+      .update(liveBets)
+      .set(updates)
+      .where(eq(liveBets.id, id))
+      .returning();
+    return bet || undefined;
+  }
+}
+
+// Keep MemStorage for reference but use DatabaseStorage
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private games: Map<number, Game>;
@@ -513,4 +871,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
